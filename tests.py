@@ -41,6 +41,7 @@ bk = book.Bookings()
 # for room in rooms:
 #     print(room)
 
-main_menu()
-
-#book_one_room()
+#main_menu()
+start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+while validate(start_date) == False or validate_check_in(start_date) == False:
+    start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")

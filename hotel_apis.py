@@ -223,6 +223,3 @@ def cancel_booking():
     # basically call the CRUD routine
 
     pass
-
-
-

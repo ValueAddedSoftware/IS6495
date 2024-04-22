@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="E:/Workspaces/python/IS6495/project_prototype/hotel_DB.sqlite" readonly="0" foreign_keys="" case_sensitive_like="" temp_store="" wal_autocheckpoint="" synchronous=""/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1046"/><column_width id="4" width="0"/></tab_structure><tab_browse><current_table name="0,0:"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">select ri.floor,ri.room_number,r.room_description,r.room_type from Room_inventory ri JOIN Rooms r on ri.room_id = r.id;
+
+select room_type from Rooms group by room_type;
+
+select room_type from Rooms where room_type = 'Standard';
+
+select case ri.available when 0 then 'Yes' else 'No' end Available from Room_inventory ri LEFT JOIN Bookings bk on ri.room_number = bk.room_number;
+
+select * from Room_inventory ri LEFT JOIN Bookings bk on ri.room_number = bk.room_number where ri.floor = 1;
+
+select * from Room_inventory ri LEFT JOIN Bookings bk on ri.room_number = bk.room_number where ri.floor = 1 and date('2024-04-16') between start_date and end_date;
+
+with Unavailable as 
+(select room_number, start_date, end_date from Bookings 
+where (date('2024-04-12') between start_date and end_date or date('2024-04-17') between start_date and end_date)
+OR start_date between date('2024-04-12') and date('2024-04-17') or end_date between date('2024-04-12') and date('2024-04-17'))
+select ri.floor,ri.room_number,r.room_description,r.room_type, r.room_rate from Room_inventory ri 
+JOIN Rooms r on ri.room_id = r.id LEFT JOIN Unavailable bk on ri.room_number = bk.room_number where r.room_rate between 100 and 130 and bk.room_number is NULL
+ORDER BY ri.floor, ri.room_number;</sql><current_tab id="0"/></tab_sql></sqlb_project>
