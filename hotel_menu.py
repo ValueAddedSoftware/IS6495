@@ -56,11 +56,11 @@ def setup_menu():
         if user_selection == "1":
             add_rooms()
         elif user_selection == "2":
-            update_rooms()
+            ui_update_rooms()
         elif user_selection == "3":
             delete_rooms()
         if user_selection == "4":
-            list_rooms()
+            list_room_types()
         elif user_selection == "5":
             add_to_inventory()
         elif user_selection == "6":
@@ -88,7 +88,7 @@ def booking_menu():
         user_selection = input("Select an option: ")
 
         if user_selection == "1":
-            book_one_room()
+            ui_book_one_room()
         elif user_selection == "2":
             ui_update_booking()
         elif user_selection == "3":

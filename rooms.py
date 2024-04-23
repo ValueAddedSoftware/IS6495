@@ -42,7 +42,7 @@ class Rooms(db.DBbase):
         param = ""
         parms_present = True
 
-        if room_id == None and room_type == None:
+        if (room_id == None or len(room_id)==0) and room_type == None:
             sql = "select * from Rooms;"
             parms_present = False
         elif room_type == None:

@@ -1,6 +1,7 @@
 from hotel_apis import *
 from export_import import *
 
+
 def validate(date_text):
     try:
         if date_text != dt.datetime.strptime(date_text, "%m-%d-%Y").strftime('%m-%d-%Y'):
@@ -34,7 +35,7 @@ def validate_check_out(check_in,check_out):
         return False
 
 ##  Room routines
-def update_rooms():
+def ui_update_rooms():
     #basically call the CRUD routine
     print("*** Update a room ***")
     list_rooms()
@@ -47,7 +48,7 @@ def update_rooms():
 
     r.update(_id,room_type,room_desc,room_price)
     list_rooms()
-    input("Press enter to continue")
+
 
 def delete_rooms():
     #basically call the CRUD routine
@@ -58,7 +59,7 @@ def delete_rooms():
     if response == "y":
         r.delete(_id)
         list_rooms()
-    input("Press enter to continue")
+
 def add_rooms():
     #basically call the CRUD routine
     print("*** Add a room ***")
@@ -67,7 +68,7 @@ def add_rooms():
     room_price = input("Enter the price of the room: ")
     r.add(room_type,room_desc,room_price)
     list_rooms()  # should list all
-    input("Press enter to continue")
+
 ##  list_rooms()  - In API
 
 ## Inventory routines
@@ -99,7 +100,6 @@ def list_inventory(room_number=None, floor=None, room_type=None):
     else:
         print(room_list)
 
-    input("Press enter to continue")
 
 def add_to_inventory():
     floor = 0
@@ -167,23 +167,35 @@ def ui_update_booking():
         end_date = input("Enter the new end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
         while validate(end_date) == False:
             end_date = input("Enter the new end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+
+        # More Date insanity -- flip them
+        s_date = datetime.strptime(start_date, '%m-%d-%Y')
+        e_date = datetime.strptime(end_date, '%m-%d-%Y')
+
+        start_date = datetime.strftime(s_date, '%Y-%m-%d')
+        end_date = datetime.strftime(e_date, '%Y-%m-%d')
+
         update_booking(booking_id, start_date, end_date)
+
     elif selection == "2":
+        # Canceling the booking and starting over is the easiet way to handle this
         ui_cancel_booking(booking_id)
         print("*** New Room Booking ***")
-        book_one_room()
+        ui_book_one_room()
 
 def ui_cancel_booking(booking_id=None):
     # Similar to update
     # probably need a search of bookings by date range (display the list) --list_all_booked_rooms()
-    list_all_booked_rooms()
-    # Make sure the list includes the booking_id (I haven't been including the id's on a routine basis in my lists)
-    # Display the list, have the user select the booking to cancel.
-    booking_id = input("Enter the Booking Id you would like to cancel: ")
+    # We may call the cancel with a booking id so no need to prompt, just delete
+    if booking_id != None:
+        list_all_booked_rooms()
+        # Make sure the list includes the booking_id (I haven't been including the id's on a routine basis in my lists)
+        # Display the list, have the user select the booking to cancel.
+        booking_id = input("Enter the Booking Id you would like to cancel: ")
     # Call the API to cancel the booking cancel_booking()
     cancel_booking(booking_id)
 
-def book_one_room():
+def ui_book_one_room():
     # Need to choose what kind of booking by date, by floor, by type, by price
     menu_options = {"1": "Book a room by floor",
                     "2": "Book a room by price",
@@ -226,7 +238,7 @@ def book_room_by_floor():
     # Loop until end date is correct
     # Pressing enter grabs today's date
     end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
-    while validate(end_date) == False or validate_check_out(start_date,end_date):
+    while validate(end_date) == False or validate_check_out(start_date,end_date) == False:
         end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
 
     print("**** Checking availability ****")
@@ -254,23 +266,23 @@ def book_room_by_type():
     room_type = None
     start_date = None
     end_date = None
-
-    rooms = list_room_types()
-    for room in rooms:
-        print(room[0])
+    list_room_types()
+    # rooms = list_room_types()
+    # for room in rooms:
+    #     print(room[0])
 
     room_type = input("Enter the room_type you would like to check availability for: ")
 
     # Loop until start date is correct
     # Pressing enter grabs today's date
-    start_date = input("Enter the start date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
     while validate(start_date) == False or validate_check_in(start_date) == False:
-        start_date = input("Enter the start date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+        start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
     # Loop until end date is correct
     # Pressing enter grabs today's date
-    end_date = input("Enter the end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
-    while validate(end_date) == False or validate_check_out(start_date, end_date):
-        end_date = input("Enter the end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    while validate(end_date) == False or validate_check_out(start_date, end_date) == False:
+        end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
 
     print("**** Checking availability ****")
     rooms = list_available_rooms_by_type(room_type, start_date, end_date )
@@ -295,22 +307,21 @@ def book_room_by_type():
 def book_room_by_price():
     ### So this gets rather gnarly.  We want to be able to check availability generally by dates but also to select
     # a floor or particular room type.  That makes for a bit of a challenge with the sql selects....
-    start_date = None
-    end_date = None
+
 
     low_price = input("Enter lowest price to search for: ")
     high_price = input("Enter the highest price to search for: ")
 
     # Loop until start date is correct
     # Pressing enter grabs today's date
-    start_date = input("Enter the start date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
-    while validate(end_date) == False or validate_check_in(start_date):
-        start_date = input("Enter the start date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    while validate(start_date) == False or validate_check_in(start_date) == False:
+        start_date = input("Enter the check-in date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
     # Loop until end date is correct
     # Pressing enter grabs today's date
-    end_date = input("Enter the end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
-    while validate(end_date) == False or validate_check_out(start_date, end_date):
-        end_date = input("Enter the end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
+    while validate(end_date) == False or validate_check_out(start_date, end_date) == False:
+        end_date = input("Enter the check-out date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
 
     print("**** Checking availability ****")
     rooms = list_available_rooms_by_price_range (low_price,high_price, start_date, end_date )
@@ -322,7 +333,7 @@ def book_room_by_price():
     # that way we could just load the data from the dictionary item
     # Instead we need to ask for the floor number to book it
 
-    room = input("To book the room, enter the room number and press enter.  Type 'Cancel' to cancel this booking")
+    room = input("To book the room, enter the room number and press enter.  Type 'Cancel' to cancel this booking: ")
 
     # More Date insanity
     s_date = datetime.strptime(start_date,'%m-%d-%Y')
@@ -349,6 +360,7 @@ def list_all_booked_rooms():
         end_date = input("Enter the end date in MM-DD-YYYY format: ") or datetime.today().strftime("%m-%d-%Y")
 
     print("**** Listing Rooms that have been booked ****")
+    print("ID Floor Room# Description Type Price    Check-in   Check-out")
     rooms = list_booked_rooms( start_date, end_date)
 
     for room in rooms:
@@ -436,3 +448,4 @@ def ui_reset_booking_data():
     response = input("This cannot be undone. Press enter 'y' to continue: ").lower()
     if response == 'y':
         bk.Bookings().reset_database()  # There will be another chance to bail in the api
+

@@ -13,11 +13,15 @@ bk = book.Bookings()
 def list_rooms(room_id=None, room_type=None):
     #basically call the CRUD routine fetch
     print("*** Room Listing ***")
-    for item in r.fetch(room_id=None, room_type=None):
+    for item in r.fetch(room_id=room_id, room_type=room_type):
         print(item)
+    input("Press enter to continue")
 
 def list_room_types():
-    return ri.get_cursor.execute("select room_type from Rooms group by room_type;").fetchall()
+    room_types =  ri.get_cursor.execute("select room_type from Rooms group by room_type;").fetchall()
+    for room in room_types:
+        print(room[0])
+
 
 def add_room_to_inventory(room_type, floor, room_number,room_status) :
     #basically call the CRUD routine
@@ -75,6 +79,9 @@ def list_rooms_in_inventory(room_number=None,floor=None, room_type=None):
             """
         # Should we preformat the list or just deliver raw data...?
         return ri.get_cursor.execute(sql,(room_type,)).fetchall()
+
+    input("Press enter to continue")
+
 
 ## Booking routines
 ######################################################################################
@@ -182,9 +189,9 @@ def list_available_rooms_by_price_range(low_price,high_price,start_date,end_date
         where (date(?) between start_date and end_date or date(?) between start_date and end_date)
         OR start_date between date(?) and date(?) or end_date between date(?) and date(?))
         select ri.floor,ri.room_number,r.room_description,r.room_type,r.room_rate from Room_inventory ri 
-        JOIN Rooms r on ri.room_id = r.id LEFT JOIN Unavailable bk on ri.room_number = bk.room_number 
-        where r.room_rate BETWEEN ? and ? 
-         and bk.room_number is NULL and ri.available = 0 ORDER BY ri.floor, ri.room_number;
+        JOIN Rooms r on ri.room_id = r.id LEFT JOIN Unavailable ua on ri.room_number = ua.room_number 
+        where cast(r.room_rate as real) BETWEEN ? and ? 
+         and ua.room_number is NULL and ri.available = 0 ORDER BY ri.floor, ri.room_number;
     """
     # Run it
     result = bk.get_cursor.execute(sql, (start_date, end_date, start_date, end_date, start_date, end_date, low_price,high_price)).fetchall()
@@ -203,10 +210,10 @@ def list_booked_rooms(start_date,end_date):
 
     sql = """
         with Unavailable as 
-        (select room_number, start_date, end_date from Bookings 
+        (select b.id as booking_id, room_number, start_date, end_date from Bookings b
         where (date(?) between start_date and end_date or date(?) between start_date and end_date)
         OR start_date between date(?) and date(?) or end_date between date(?) and date(?))
-        select ri.floor,ri.room_number,r.room_description,r.room_type,r.room_rate,STRFTIME('%m-%d-%Y', ua.start_date),
+        select ua.booking_id, ri.floor,ri.room_number,r.room_description,r.room_type,r.room_rate,STRFTIME('%m-%d-%Y', ua.start_date),
         STRFTIME('%m-%d-%Y', ua.end_date) from Room_inventory ri 
         JOIN Rooms r on ri.room_id = r.id LEFT JOIN Unavailable ua on ri.room_number = ua.room_number 
         where ua.room_number is not NULL ORDER BY ri.floor, ri.room_number;
@@ -215,11 +222,13 @@ def list_booked_rooms(start_date,end_date):
     result = bk.get_cursor.execute(sql, (start_date, end_date, start_date, end_date, start_date, end_date)).fetchall()
     return result
 
-def update_booking():
+def update_booking(booking_id, start_date, end_date):
     # basically call the CRUD routine - The booking ID is the booking dates ID
-    pass
 
-def cancel_booking():
+    bk.update(booking_id, start_date, end_date)
+    print("Booking",booking_id,"updated.")
+
+def cancel_booking(booking_id):
     # basically call the CRUD routine
 
-    pass
+    bk.delete(booking_id)
